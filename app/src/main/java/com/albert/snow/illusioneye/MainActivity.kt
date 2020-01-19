@@ -22,18 +22,18 @@ import java.io.File
 import java.io.IOException
 import java.lang.ref.WeakReference
 
+const val FILTER_NONE = 0
+val FILTER_BLACK_WHITE = 1
+val FILTER_BLUR = 2
+val FILTER_SHARPEN = 3
+val FILTER_EDGE_DETECT = 4
+val FILTER_EMBOSS = 5
 class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListener{
 
     private val TAG = "MainActivity"
     private val VERBOSE = false
 
     // Camera filters; must match up with cameraFilterNames in strings.xml
-    internal val FILTER_NONE = 0
-    internal val FILTER_BLACK_WHITE = 1
-    internal val FILTER_BLUR = 2
-    internal val FILTER_SHARPEN = 3
-    internal val FILTER_EDGE_DETECT = 4
-    internal val FILTER_EMBOSS = 5
 
     private var mGLView: GLSurfaceView? = null
     private var mRenderer: FetchFrameRender? = null
@@ -311,7 +311,7 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
      * The object is created on the UI thread, and all handlers run there.  Messages are
      * sent from other threads, using sendMessage().
      */
-    internal class CameraHandler(activity: MainActivity) : Handler() {
+    public class CameraHandler(activity: MainActivity) : Handler() {
         val TAG = "CameraHandler"
 
         // Weak reference to the Activity; only access this from the UI thread.
