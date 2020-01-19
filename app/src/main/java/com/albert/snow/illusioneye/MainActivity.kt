@@ -1,6 +1,7 @@
 package com.albert.snow.illusioneye
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.opengl.GLSurfaceView
@@ -14,6 +15,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.*
 import androidx.annotation.NonNull
+import com.albert.snow.illusioneye.opengl.Texture2dProgram
 import com.albert.snow.illusioneye.util.CameraUtils
 import com.albert.snow.illusioneye.util.PermissionHelper
 import com.albert.snow.illusioneye.widget.AspectFrameLayout
@@ -30,6 +32,7 @@ val FILTER_EDGE_DETECT = 4
 val FILTER_EMBOSS = 5
 class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListener{
 
+    private var mFrameImageView: ImageView? = null
     private val TAG = "MainActivity"
     private val VERBOSE = false
 
@@ -73,12 +76,25 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
         // appropriate EGL context.
         mGLView = findViewById(R.id.cameraPreview_surfaceView) as GLSurfaceView
         mGLView!!.setEGLContextClientVersion(2)     // select GLES 2.0
-        mRenderer = FetchFrameRender(mCameraHandler)
+        mRenderer = FetchFrameRender(mCameraHandler, glCallback)
         mGLView!!.setRenderer(mRenderer)
         mGLView!!.renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
 
+        initView();
+
         Log.d(TAG, "onCreate complete: $this")
     }
+
+    private fun initView() {
+        mFrameImageView  = findViewById<ImageView>(R.id.main_frame_image)
+    }
+
+    private val glCallback = Texture2dProgram.GLCallback {
+        mFrameImageView?.post {
+            mFrameImageView?.setImageBitmap(it)
+        }
+    }
+
 
     override fun onResume() {
         Log.d(TAG, "onResume -- acquiring camera")
@@ -354,4 +370,9 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
             val MSG_SET_SURFACE_TEXTURE = 0
         }
     }
+
+    fun doCapture(view: View) {
+        mRenderer?.captureFrame()
+    }
+
 }

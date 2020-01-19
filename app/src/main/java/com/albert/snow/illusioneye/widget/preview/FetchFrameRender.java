@@ -1,5 +1,6 @@
 package com.albert.snow.illusioneye.widget.preview;
 
+import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
@@ -19,8 +20,7 @@ import static com.albert.snow.illusioneye.MainActivityKt.FILTER_NONE;
 
 public class FetchFrameRender implements GLSurfaceView.Renderer {
 
-    MainActivity.CameraHandler mCameraHandler;
-
+    private MainActivity.CameraHandler mCameraHandler;
     private static final String TAG = "FetchFrameRender";
     private static final boolean VERBOSE = false;
 
@@ -49,6 +49,7 @@ public class FetchFrameRender implements GLSurfaceView.Renderer {
     private int mCurrentFilter;
     private int mNewFilter;
 
+    private Texture2dProgram.GLCallback glCallback;
 
     /**
      * Constructs CameraSurfaceRenderer.
@@ -57,8 +58,9 @@ public class FetchFrameRender implements GLSurfaceView.Renderer {
 //     * @param movieEncoder video encoder object
 //     * @param outputFile output file for encoded video; forwarded to movieEncoder
      */
-    public FetchFrameRender(MainActivity.CameraHandler cameraHandler) {
+    public FetchFrameRender(MainActivity.CameraHandler cameraHandler, Texture2dProgram.GLCallback callback) {
         mCameraHandler = cameraHandler;
+        glCallback = callback;
 //        mVideoEncoder = movieEncoder;
 //        mOutputFile = outputFile;
 
@@ -74,6 +76,12 @@ public class FetchFrameRender implements GLSurfaceView.Renderer {
         // We could preserve the old filter mode, but currently not bothering.
         mCurrentFilter = -1;
         mNewFilter = FILTER_NONE;
+    }
+
+    public void captureFrame() {
+        if (mFullScreen != null && mFullScreen.getProgram() != null) {
+            mFullScreen.getProgram().captureFrame.set(true);
+        }
     }
 
     /**
@@ -164,7 +172,7 @@ public class FetchFrameRender implements GLSurfaceView.Renderer {
         // Do we need a whole new program?  (We want to avoid doing this if we don't have
         // too -- compiling a program could be expensive.)
         if (programType != mFullScreen.getProgram().getProgramType()) {
-            mFullScreen.changeProgram(new Texture2dProgram(programType));
+            mFullScreen.changeProgram(new Texture2dProgram(programType, glCallback));
             // If we created a new program, we need to initialize the texture width/height.
             mIncomingSizeUpdated = true;
         }
@@ -189,6 +197,14 @@ public class FetchFrameRender implements GLSurfaceView.Renderer {
         mIncomingWidth = width;
         mIncomingHeight = height;
         mIncomingSizeUpdated = true;
+
+        updateFrameDimension();
+    }
+
+    private void updateFrameDimension() {
+        if (mFullScreen != null && mFullScreen.getProgram() != null) {
+            mFullScreen.getProgram().setScreenDimension(mIncomingWidth, mIncomingHeight);
+        }
     }
 
     @Override
@@ -208,9 +224,10 @@ public class FetchFrameRender implements GLSurfaceView.Renderer {
         // Set up the texture blitter that will be used for on-screen display.  This
         // is *not* applied to the recording, because that uses a separate shader.
         mFullScreen = new FullFrameRect(
-                new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT));
+                new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT, glCallback));
 
         mTextureId = mFullScreen.createTextureObject();
+        updateFrameDimension();
 
         // Create a SurfaceTexture, with an external texture, in this EGL context.  We don't
         // have a Looper in this thread -- GLSurfaceView doesn't create one -- so the frame

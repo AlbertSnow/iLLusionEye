@@ -16,17 +16,29 @@
 
 package com.albert.snow.illusioneye.opengl;
 
+import android.graphics.Bitmap;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.util.Log;
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * GL program and supporting functions for textured 2D shapes.
  */
 public class Texture2dProgram {
-    private static final String TAG = GlUtil.TAG;
+    private static final String TAG = "Texture2dProgram";
+    public AtomicBoolean captureFrame = new AtomicBoolean(false);
+    private GLCallback callback;
+    private int screenWidth;
+    private int screenHeight;
+
+    public void setScreenDimension(int screenWidth, int screenHeight) {
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+    }
 
     public enum ProgramType {
         TEXTURE_2D, TEXTURE_EXT, TEXTURE_EXT_BW, TEXTURE_EXT_FILT
@@ -135,8 +147,9 @@ public class Texture2dProgram {
     /**
      * Prepares the program in the current EGL context.
      */
-    public Texture2dProgram(ProgramType programType) {
+    public Texture2dProgram(ProgramType programType, GLCallback callback) {
         mProgramType = programType;
+        this.callback = callback;
 
         switch (programType) {
             case TEXTURE_2D:
@@ -334,10 +347,53 @@ public class Texture2dProgram {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, firstVertex, vertexCount);
         GlUtil.checkGlError("glDrawArrays");
 
+
+        if (captureFrame.compareAndSet(true, false)) {
+            boolean isCaptureValid = true;
+            if (screenHeight == 0 || screenWidth == 0) {
+                Log.i(TAG, "dimension is 0");
+                isCaptureValid = false;
+            }
+
+            if (callback == null) {
+                Log.i(TAG, "GLES capture callback is null");
+                isCaptureValid = false;
+            }
+
+            if (isCaptureValid) {
+                captureFame();
+            }
+        }
+
+
         // Done -- disable vertex array, texture, and program.
         GLES20.glDisableVertexAttribArray(maPositionLoc);
         GLES20.glDisableVertexAttribArray(maTextureCoordLoc);
         GLES20.glBindTexture(mTextureTarget, 0);
         GLES20.glUseProgram(0);
     }
+
+    private void captureFame() {
+        IntBuffer pixels = IntBuffer.allocate(screenWidth * screenHeight);
+
+        long startTime = System.currentTimeMillis();
+        GLES20.glReadPixels(0, 0, screenWidth, screenHeight, GLES20.GL_RGBA,  GLES20.GL_UNSIGNED_BYTE,  pixels);
+        Log.i("TimeCast", "cast: " + (System.currentTimeMillis() - startTime));
+
+
+        long castStartTime = System.currentTimeMillis();
+        Bitmap stitchBmp = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
+        stitchBmp.copyPixelsFromBuffer(pixels);
+        Log.i("TimeCast", "castStartTime: " + (System.currentTimeMillis() - castStartTime));
+
+        if (callback != null) {
+            callback.onCapture(stitchBmp);
+        }
+    }
+
+
+    public interface GLCallback {
+        void onCapture(Bitmap bitmap);
+    }
+
 }

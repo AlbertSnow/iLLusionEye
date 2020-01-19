@@ -80,4 +80,23 @@
         android:paddingLeft="4dp"
         android:text="@string/cameraOutputFile_text" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:onClick= "doCapture"
+        android:text="Do Capture"
+        />
+
+    <ImageView
+        android:id="@+id/main_frame_image"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:scaleType="center"
+        android:src="@drawable/ic_launcher_background"
+        />
+
 </RelativeLayout>
