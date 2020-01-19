@@ -19,7 +19,11 @@ package com.albert.snow.illusioneye.opengl;
 import android.graphics.Bitmap;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.renderscript.Allocation;
 import android.util.Log;
+
+import com.albert.snow.illusioneye.MyApplication;
+import com.albert.snow.illusioneye.util.ScriptC_flip;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -374,6 +378,8 @@ public class Texture2dProgram {
     }
 
     private void captureFame() {
+        long totalFrameTime = System.currentTimeMillis();
+
         if (screenWidth > screenHeight) {
             int cache = screenWidth;
             screenWidth = screenHeight;
@@ -387,10 +393,29 @@ public class Texture2dProgram {
         Log.i("TimeCast", "cast: " + (System.currentTimeMillis() - startTime));
 
 
+
+//        int[] originalPixelArray = pixels.array();
+//        int[] pixelMirroredArray = new int[screenWidth * screenHeight];
+//        for (int i = 0; i < screenHeight; i++) {
+//            for (int j = 0; j < screenWidth; j++) {
+//                pixelMirroredArray[(screenHeight - i - 1) * screenWidth + j] = originalPixelArray[i * screenWidth + j];
+//            }
+//        }
+
+
+
         long castStartTime = System.currentTimeMillis();
+
+//        Bitmap stitchBmp = Bitmap.createBitmap(pixelMirroredArray, screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
+//        stitchBmp.copyPixelsFromBuffer(pixelMirroredArray);
         Bitmap stitchBmp = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
         stitchBmp.copyPixelsFromBuffer(pixels);
+
         Log.i("TimeCast", "castStartTime: " + (System.currentTimeMillis() - castStartTime));
+
+
+        stitchBmp = flipVertical(stitchBmp);
+        Log.i("TimeCast", "totalCast: " + (System.currentTimeMillis() - totalFrameTime));
 
         if (callback != null) {
             callback.onCapture(stitchBmp);
@@ -400,6 +425,67 @@ public class Texture2dProgram {
 
     public interface GLCallback {
         void onCapture(Bitmap bitmap);
+    }
+
+
+    private Allocation fromRotateAllocation;
+    private int preInRotateHeight;
+    private int preInRotateWidth;
+    private int preOutRotateHeight;
+    private int preOutRotateWidth;
+    private Allocation toRotateAllocation;
+
+    private ScriptC_flip script = MyApplication.instance.getFlipScript();
+
+    public Bitmap flipVertical(Bitmap bitmap) {
+        Bitmap.Config config = bitmap.getConfig();
+        int targetHeight = bitmap.getHeight();
+        int targetWidth = bitmap.getWidth();
+
+        script.set_inWidth(bitmap.getWidth());
+        script.set_inHeight(bitmap.getHeight());
+
+        Allocation sourceAllocation = getFromRotateAllocation(bitmap);
+        sourceAllocation.copyFrom(bitmap);
+        script.set_inImage(sourceAllocation);
+        bitmap.recycle();
+
+        Bitmap target = Bitmap.createBitmap(targetWidth, targetHeight, config);
+        final Allocation targetAllocation = getToRotateAllocation(target);
+        script.forEach_flip_vertical(targetAllocation, targetAllocation);
+
+        targetAllocation.copyTo(target);
+
+        return target;
+    }
+
+
+    private Allocation getFromRotateAllocation(Bitmap bitmap) {
+        int targetHeight = bitmap.getHeight();
+        int targetWidth = bitmap.getWidth();
+        if (targetHeight != preInRotateHeight || targetWidth != preInRotateWidth) {
+            preInRotateHeight = targetHeight;
+            preInRotateWidth = targetWidth;
+            fromRotateAllocation = Allocation.createFromBitmap(MyApplication.instance.getRenderScript(),
+                    bitmap,
+                    Allocation.MipmapControl.MIPMAP_NONE,
+                    Allocation.USAGE_SCRIPT);
+        }
+        return fromRotateAllocation;
+    }
+
+    private Allocation getToRotateAllocation(Bitmap bitmap) {
+        int targetHeight = bitmap.getHeight();
+        int targetWidth = bitmap.getWidth();
+        if (targetHeight != preOutRotateHeight || targetWidth != preOutRotateWidth) {
+            preOutRotateHeight = targetHeight;
+            preOutRotateWidth = targetWidth;
+            toRotateAllocation =  Allocation.createFromBitmap(MyApplication.instance.getRenderScript(),
+                    bitmap,
+                    Allocation.MipmapControl.MIPMAP_NONE,
+                    Allocation.USAGE_SCRIPT);
+        }
+        return toRotateAllocation;
     }
 
 }
