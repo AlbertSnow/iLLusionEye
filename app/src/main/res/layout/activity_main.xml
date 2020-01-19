@@ -95,7 +95,7 @@
         android:layout_height="100dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
-        android:scaleType="center"
+        android:scaleType="fitXY"
         android:src="@drawable/ic_launcher_background"
         />
 

@@ -374,6 +374,12 @@ public class Texture2dProgram {
     }
 
     private void captureFame() {
+        if (screenWidth > screenHeight) {
+            int cache = screenWidth;
+            screenWidth = screenHeight;
+            screenHeight = cache;
+        }
+
         IntBuffer pixels = IntBuffer.allocate(screenWidth * screenHeight);
 
         long startTime = System.currentTimeMillis();
