@@ -17,6 +17,7 @@
 package com.albert.snow.illusioneye.opengl;
 
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.renderscript.Allocation;
@@ -414,7 +415,7 @@ public class Texture2dProgram {
         Log.i("TimeCast", "castStartTime: " + (System.currentTimeMillis() - castStartTime));
 
 
-        stitchBmp = flipVertical(stitchBmp);
+        stitchBmp = flipVertical2(stitchBmp);
         Log.i("TimeCast", "totalCast: " + (System.currentTimeMillis() - totalFrameTime));
 
         if (callback != null) {
@@ -427,6 +428,14 @@ public class Texture2dProgram {
         void onCapture(Bitmap bitmap);
     }
 
+    private Bitmap flipVertical2(Bitmap bmp) {
+        Matrix matrix = new Matrix();
+        matrix.preScale(1f, -1f);
+        Bitmap bmp2 = Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(), bmp.getHeight(), matrix, false);
+
+        bmp.recycle();
+        return bmp2;
+    }
 
     private Allocation fromRotateAllocation;
     private int preInRotateHeight;
