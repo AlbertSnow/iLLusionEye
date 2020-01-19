@@ -181,7 +181,11 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
             throw RuntimeException("Unable to open camera")
         }
 
-        val parms = mCamera!!.parameters
+        val parms = mCamera?.parameters
+        if (parms == null) {
+            return;
+        }
+
 
         CameraUtils.choosePreviewSize(parms, desiredWidth, desiredHeight)
 
@@ -190,7 +194,7 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
         parms.setRecordingHint(true)
 
         // leave the frame rate set to default
-        mCamera!!.parameters = parms
+        mCamera?.parameters = parms
 
         val fpsRange = IntArray(2)
         val mCameraPreviewSize = parms.previewSize
@@ -214,11 +218,11 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
         val display = (getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
 
         if (display.rotation == Surface.ROTATION_0) {
-            mCamera!!.setDisplayOrientation(90)
+            mCamera?.setDisplayOrientation(90)
             layout.setAspectRatio(mCameraPreviewHeight.toDouble() / mCameraPreviewWidth)
         } else if (display.rotation == Surface.ROTATION_270) {
             layout.setAspectRatio(mCameraPreviewHeight.toDouble() / mCameraPreviewWidth)
-            mCamera!!.setDisplayOrientation(180)
+            mCamera?.setDisplayOrientation(180)
         } else {
             // Set the preview aspect ratio.
             layout.setAspectRatio(mCameraPreviewWidth.toDouble() / mCameraPreviewHeight)
@@ -230,8 +234,8 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
      */
     private fun releaseCamera() {
         if (mCamera != null) {
-            mCamera!!.stopPreview()
-            mCamera!!.release()
+            mCamera?.stopPreview()
+            mCamera?.release()
             mCamera = null
             Log.d(TAG, "releaseCamera -- done")
         }
@@ -278,12 +282,12 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
     private fun handleSetSurfaceTexture(st: SurfaceTexture) {
         st.setOnFrameAvailableListener(this)
         try {
-            mCamera!!.setPreviewTexture(st)
+            mCamera?.setPreviewTexture(st)
         } catch (ioe: IOException) {
             throw RuntimeException(ioe)
         }
 
-        mCamera!!.startPreview()
+        mCamera?.startPreview()
     }
 
     override fun onFrameAvailable(st: SurfaceTexture) {

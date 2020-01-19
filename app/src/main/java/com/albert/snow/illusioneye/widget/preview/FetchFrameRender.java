@@ -273,7 +273,7 @@ public class FetchFrameRender implements GLSurfaceView.Renderer {
                     // yay
                     break;
                 default:
-                    throw new RuntimeException("unknown status " + mRecordingStatus);
+//                    throw new RuntimeException("unknown status " + mRecordingStatus);
             }
         }
 
